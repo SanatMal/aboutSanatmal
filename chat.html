@@ -3,162 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat with Sanat</title>
+  <title>Sanat Chat</title>
   <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #0a192f, #1e3a8a);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; }
+    #chatBox {
+      border: 1px solid #ccc; background: #fff;
+      height: 400px; overflow-y: auto; padding: 10px;
+      border-radius: 10px; margin-bottom: 10px;
     }
-    .chat-container {
-      width: 400px;
-      height: 550px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 0 15px rgba(255,255,255,0.2);
-      position: relative;
-    }
-    .chat-header {
-      background: rgba(255,255,255,0.15);
-      padding: 12px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      position: relative;
-    }
-    .back-home {
-      position: absolute;
-      left: 15px;
-      top: 10px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 5px 10px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s ease;
-    }
-    .back-home:hover { background: #1e40af; }
-    .chat-box {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      scroll-behavior: smooth;
-    }
-    .message {
-      background: rgba(255,255,255,0.2);
-      padding: 10px 15px;
-      border-radius: 10px;
-      align-self: flex-start;
-      max-width: 75%;
-    }
-    .me { align-self: flex-end; background: #2563eb; }
-    .input-area { display: flex; border-top: 1px solid rgba(255,255,255,0.2); }
-    input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
-    input::placeholder { color: rgba(255,255,255,0.7); }
-    button {
-      padding: 10px 15px;
-      background: #2563eb;
-      border: none;
-      color: white;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover { background: #1e40af; }
+    .message { padding: 5px 10px; margin: 5px 0; background: #e9f5ff; border-radius: 8px; }
+    #msgInput { width: 80%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    #sendBtn { padding: 10px 20px; border: none; border-radius: 8px; background: #007bff; color: #fff; cursor: pointer; }
+    #sendBtn:hover { background: #0056b3; }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <button class="back-home" onclick="window.location.href='index.html'">← Home</button>
-      Chat with Sanat
-    </div>
-    <div class="chat-box" id="chatBox"></div>
-    <div class="input-area">
-      <input id="msgInput" type="text" placeholder="Type your message..." />
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
+  <h2>💬 Chat with Sanat</h2>
+  <div id="chatBox"></div>
+  <input type="text" id="msgInput" placeholder="Type your message...">
+  <button id="sendBtn">Send</button>
 
-  <!-- Supabase JS -->
-  <!-- 1️⃣ Load Supabase JS first -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.24.0/dist/umd/supabase.min.js"></script>
+  <!-- ✅ Load Supabase first -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
 
-<!-- 2️⃣ Then write your script -->
-<script>
-  // 🔥 Replace with your Supabase project info
-  const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY";
+  <!-- ✅ Then your chat script -->
+  <script>
+    const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY";
 
-  // ✅ Now this works because Supabase is already loaded
-  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const chatBox = document.getElementById('chatBox');
-  const msgInput = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
+    const chatBox = document.getElementById('chatBox');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
 
-  // Send message
-  sendBtn.addEventListener('click', async () => {
-    const text = msgInput.value.trim();
-    if (!text) return;
-
-    const { data, error } = await client
-      .from('messages')
-      .insert([{ text, created_at: new Date() }]);
-
-    if (error) {
-      console.error("Error sending:", error);
-      alert("Error: " + error.message);
-    } else {
+    sendBtn.addEventListener('click', async () => {
+      const text = msgInput.value.trim();
+      if (!text) return;
+      await client.from('messages').insert([{ text, created_at: new Date() }]);
       msgInput.value = '';
-    }
-  });
-
-  // Load messages
-  async function loadMessages() {
-    const { data, error } = await client
-      .from('messages')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error("Load error:", error);
-      return;
-    }
-
-    data.forEach(msg => {
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.textContent = msg.text;
-      chatBox.appendChild(div);
     });
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-  loadMessages();
 
-  // Realtime updates
-  client
-    .channel('public:messages')
-    .on(
+    async function loadMessages() {
+      const { data } = await client.from('messages').select('*').order('created_at', { ascending: true });
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.textContent = msg.text;
+        chatBox.appendChild(div);
+      });
+    }
+    loadMessages();
+
+    client.channel('public:messages').on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages' },
       payload => {
@@ -167,14 +64,8 @@
         div.className = 'message';
         div.textContent = msg.text;
         chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
       }
-    )
-    .subscribe();
-</script>
-
+    ).subscribe();
+  </script>
 </body>
 </html>
-
-
-
