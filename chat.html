@@ -123,20 +123,20 @@
   </div>
 
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
-
-  <script>
+<script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js"></script>
+<script>
     // 🔥 Replace this config with YOUR Firebase Web App config
-    const firebaseConfig = {
-        authDomain: "sanatmal-portfolio-chat.firebaseapp.com",
-        projectId: "sanatmal-portfolio-chat",
-        storageBucket: "sanatmal-portfolio-chat.firebasestorage.app",
-        messagingSenderId: "83984290047",
-        appId: "1:83984290047:web:b157497ae32b27336afcca",
-        apiKey: "AIzaSyAskWD9sQ_M4eYbqDg5rZHScTfA8Pqg0Ro",
-        measurementId: "G-DZRE24FQX4"
-    };
+   const firebaseConfig = {
+    apiKey: "AIzaSyAskWD9sQ_M4eYbqDg5rZHScTfA8Pqg0Ro",
+    authDomain: "sanatmal-portfolio-chat.firebaseapp.com",
+    databaseURL: "https://sanatmal-portfolio-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "sanatmal-portfolio-chat",
+    storageBucket: "sanatmal-portfolio-chat.firebasestorage.app",
+    messagingSenderId: "83984290047",
+    appId: "1:83984290047:web:d7091264d0875c7a6afcca",
+    measurementId: "G-PJNV0KQGSH"
+  };
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -147,24 +147,29 @@
     const sendBtn = document.getElementById('sendBtn');
 
     // Send message
-    sendBtn.onclick = () => {
-      const text = msgInput.value.trim();
-      if (text) {
-        const msgRef = db.ref('messages').push();
-        msgRef.set({ text, time: Date.now() });
-        msgInput.value = '';
-      }
-    };
+    sendBtn.addEventListener('click', () => {
+    const text = msgInput.value.trim();
+    if(text) {
+      const msgRef = db.ref('messages').push();
+      msgRef.set({
+        text: text,
+        time: Date.now()
+      }).then(() => {
+        msgInput.value = ''; // clear input after sending
+      }).catch(err => console.error(err));
+    }
+  });
 
     // Listen for new messages
-    db.ref('messages').on('child_added', (snap) => {
-      const msg = snap.val();
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.textContent = msg.text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
+    db.ref('messages').on('child_added', (snapshot) => {
+    const msg = snapshot.val();
+    const div = document.createElement('div');
+    div.className = 'message';
+    div.textContent = msg.text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
   </script>
 </body>
 </html>
+
