@@ -100,14 +100,17 @@
   </div>
 
   <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.24.0/dist/supabase.min.js"></script>
-<script>
-  // 🔥 Replace with your Supabase Project URL & anon key
-  const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co"; 
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY"; 
+  <!-- 1️⃣ Load Supabase JS first -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.24.0/dist/umd/supabase.min.js"></script>
 
-  // Initialize client
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<!-- 2️⃣ Then write your script -->
+<script>
+  // 🔥 Replace with your Supabase project info
+  const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY";
+
+  // ✅ Now this works because Supabase is already loaded
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const chatBox = document.getElementById('chatBox');
   const msgInput = document.getElementById('msgInput');
@@ -123,13 +126,14 @@
       .insert([{ text, created_at: new Date() }]);
 
     if (error) {
-      console.error("Error sending message:", error.message);
+      console.error("Error sending:", error);
+      alert("Error: " + error.message);
     } else {
       msgInput.value = '';
     }
   });
 
-  // Load existing messages
+  // Load messages
   async function loadMessages() {
     const { data, error } = await client
       .from('messages')
@@ -137,7 +141,7 @@
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error("Error loading messages:", error.message);
+      console.error("Load error:", error);
       return;
     }
 
@@ -151,21 +155,26 @@
   }
   loadMessages();
 
-  // Real-time subscription
+  // Realtime updates
   client
     .channel('public:messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      const msg = payload.new;
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.textContent = msg.text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    })
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' },
+      payload => {
+        const msg = payload.new;
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.textContent = msg.text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    )
     .subscribe();
 </script>
 
 </body>
 </html>
+
 
 
