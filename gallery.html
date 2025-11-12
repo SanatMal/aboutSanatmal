@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery | Sanat Mal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="fade-in">
+    <nav>
+      <h1 class="logo">Sanat Mal</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="gallery.html" class="active">Gallery</a></li>
+        <li><a href="chat.html">Chat</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="gallery fade-in">
+    <h2>My Gallery</h2>
+    <div class="slider">
+      <div class="slides">
+        <img src="img1.jpg" alt="Sanat Photo 1">
+        <img src="img2.jpg" alt="Sanat Photo 2">
+        <img src="img3.jpg" alt="Sanat Photo 3">
+        <img src="img4.jpg" alt="Sanat Photo 4">
+      </div>
+      <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
+      <button class="next" onclick="moveSlide(1)">&#10095;</button>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 Sanat Mal | All Rights Reserved</p>
+  </footer>
+</body>
+</html>
