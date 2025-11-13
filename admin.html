@@ -132,6 +132,14 @@ sendBtn.addEventListener("click", async () => {
   addMessage({ text, sender: "admin", created_at: new Date() });
 });
 
+  // 👇 Allow sending message with Enter key
+msgInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendBtn.click(); // triggers the same send action
+  }
+});
+
 // --- Real-time updates ---
 client.channel("admin-updates")
   .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
@@ -153,3 +161,4 @@ logoutBtn.onclick = () => {
 </script>
 </body>
 </html>
+
