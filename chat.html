@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat with Admin</title>
+<title>Private Chat with Admin</title>
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -14,33 +14,22 @@ body {
 #chatBox {
   width: 90%; max-width: 600px; height: 400px; overflow-y: auto;
   background: white; border-radius: 10px; border: 1px solid #ccc;
-  padding: 10px; margin-bottom: 10px;
+  padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column;
 }
 .message {
-  padding: 8px 12px; border-radius: 8px; margin: 6px 0; max-width: 70%;
+  padding: 8px 12px; border-radius: 8px; margin: 6px 0; max-width: 70%; word-wrap: break-word;
 }
 .user { background: #bbdefb; align-self: flex-end; margin-left: auto; }
 .admin { background: #c8e6c9; align-self: flex-start; }
 .timestamp { font-size: 0.8em; color: gray; margin-top: 2px; }
-.input-row {
-  display: flex; width: 90%; max-width: 600px; gap: 10px;
-}
-#msgInput {
-  flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc;
-}
-#sendBtn {
-  background: #2196f3; color: white; border: none;
-  border-radius: 8px; padding: 10px 20px; cursor: pointer;
-}
+.input-row { display: flex; width: 90%; max-width: 600px; gap: 10px; }
+#msgInput { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+#sendBtn { background: #2196f3; color: white; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
 </style>
 </head>
 <body>
-
 <h2>💬 Chat with Admin</h2>
-
-<input id="userEmail" type="email" placeholder="Enter your Gmail" style="padding:10px; border-radius:8px; margin-bottom:10px; width:90%; max-width:600px;" required />
 <div id="chatBox"></div>
-
 <div class="input-row">
   <input id="msgInput" type="text" placeholder="Type your message..." />
   <button id="sendBtn">Send</button>
@@ -48,46 +37,62 @@ body {
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
 <script>
+// Supabase setup
 const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const chatBox = document.getElementById('chatBox');
-const msgInput = document.getElementById('msgInput');
-const sendBtn = document.getElementById('sendBtn');
-const userEmail = document.getElementById('userEmail');
+// Elements
+const chatBox = document.getElementById("chatBox");
+const msgInput = document.getElementById("msgInput");
+const sendBtn = document.getElementById("sendBtn");
 
-function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+// Generate or retrieve unique user ID
+let userId = localStorage.getItem("chatUserId");
+if (!userId) {
+  userId = "user-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  localStorage.setItem("chatUserId", userId);
 }
 
+// Helper to format time
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+// Add message to chat box
 function addMessage(msg) {
-  const div = document.createElement('div');
-  div.className = 'message ' + (msg.sender === 'admin' ? 'admin' : 'user');
-  div.innerHTML = `<div>${msg.text}</div><div class="timestamp">${msg.email} • ${formatTime(msg.created_at)}</div>`;
+  const div = document.createElement("div");
+  div.className = "message " + (msg.sender === "admin" ? "admin" : "user");
+  div.innerHTML = `<div>${msg.text}</div><div class="timestamp">${msg.sender} • ${formatTime(msg.created_at)}</div>`;
   chatBox.appendChild(div);
 }
 
+// Load messages for this user
 async function loadMessages() {
-  const { data } = await client.from('messages').select('*').order('created_at', { ascending: true });
-  chatBox.innerHTML = '';
+  const { data } = await client.from("messages").select("*").eq("user_id", userId).order("created_at", { ascending: true });
+  chatBox.innerHTML = "";
   data.forEach(addMessage);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Send message
 sendBtn.onclick = async () => {
   const text = msgInput.value.trim();
-  const email = userEmail.value.trim();
-  if (!text || !email) return alert("Please enter your Gmail first!");
-  await client.from('messages').insert([{ text, sender: 'user', email }]);
-  msgInput.value = '';
+  if (!text) return;
+  const { error } = await client.from("messages").insert([{ text, sender: "user", user_id: userId }]);
+  if (error) return console.error(error);
+  addMessage({ text, sender: "user", user_id: userId, created_at: new Date() });
+  msgInput.value = "";
 };
 
-client.channel('chat')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-    addMessage(payload.new);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }).subscribe();
+// Real-time listener for this user
+client.channel("chat-" + userId)
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `user_id=eq.${userId}` },
+      (payload) => {
+        addMessage(payload.new);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      })
+  .subscribe();
 
 loadMessages();
 </script>
