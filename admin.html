@@ -1,95 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Admin Chat Panel</title>
 <style>
 body {
-  font-family: Arial; background: #f9f9f9; display: flex; flex-direction: column; align-items: center;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #fff8e1, #f1f8e9);
   padding: 20px;
 }
+.container {
+  display: flex; flex-direction: column; align-items: center;
+}
+#userSelect {
+  margin-bottom: 15px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
 #chatBox {
-  width: 90%; max-width: 700px; height: 450px;
+  width: 90%; max-width: 700px; height: 400px; overflow-y: auto;
   background: white; border-radius: 10px; border: 1px solid #ccc;
-  overflow-y: auto; padding: 10px; margin-bottom: 10px;
+  padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column;
 }
 .message {
-  padding: 8px 12px; border-radius: 8px; margin: 6px 0; max-width: 75%;
+  padding: 8px 12px; border-radius: 8px; margin: 6px 0; max-width: 70%;
+  word-wrap: break-word;
 }
-.user { background: #e3f2fd; align-self: flex-start; }
+.user { background: #bbdefb; align-self: flex-start; }
 .admin { background: #c8e6c9; align-self: flex-end; margin-left: auto; }
-.timestamp { font-size: 0.8em; color: gray; }
-.input-row {
-  display: flex; width: 90%; max-width: 700px; gap: 10px;
-}
+.timestamp { font-size: 0.8em; color: gray; margin-top: 3px; }
+.input-row { display: flex; width: 90%; max-width: 700px; gap: 10px; }
 #msgInput { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-#emailInput { width: 250px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-#sendBtn {
-  background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
-}
+#sendBtn { background: #43a047; color: white; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
+#logoutBtn { background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
 </style>
 </head>
 <body>
+<div class="container">
+  <h2>🛠 Admin Chat Panel</h2>
+  <select id="userSelect">
+    <option value="">-- Select a User --</option>
+  </select>
 
-<h2>🛠️ Admin Chat Panel</h2>
-<div id="chatBox"></div>
-
-<div class="input-row">
-  <input id="emailInput" type="email" placeholder="Reply to Gmail ID..." />
-  <input id="msgInput" type="text" placeholder="Type your reply..." />
-  <button id="sendBtn">Send</button>
+  <div id="chatBox"></div>
+  <div class="input-row">
+    <input id="msgInput" type="text" placeholder="Type message to user..." />
+    <button id="sendBtn">Send</button>
+  </div>
+  <button id="logoutBtn">Logout</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
 <script>
-if (localStorage.getItem("isAdmin") !== "true") {
-  window.location.href = "login.html";
-}
-
 const SUPABASE_URL = "https://wcmnbilscntlsycqgrip.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbW5iaWxzY250bHN5Y3FncmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzE1MjQsImV4cCI6MjA3ODU0NzUyNH0.4stQ_YHraJ2PwU4z7YGh_aOjGLEJ3wMRO5sb6q9iziY";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const userSelect = document.getElementById("userSelect");
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msgInput");
-const emailInput = document.getElementById("emailInput");
 const sendBtn = document.getElementById("sendBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 
-function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+// --- Admin login protection ---
+const adminPass = "admin123"; // change this
+if (localStorage.getItem("adminAuth") !== "true") {
+  const pass = prompt("Enter admin password:");
+  if (pass === adminPass) {
+    localStorage.setItem("adminAuth", "true");
+  } else {
+    alert("Unauthorized access!");
+    window.location.href = "index.html";
+  }
 }
 
+// --- Load unique users ---
+async function loadUsers() {
+  const { data } = await client.from("messages").select("user_id").neq("user_id", null);
+  const uniqueUsers = [...new Set(data.map(m => m.user_id))];
+  userSelect.innerHTML = '<option value="">-- Select a User --</option>';
+  uniqueUsers.forEach(uid => {
+    const opt = document.createElement("option");
+    opt.value = uid;
+    opt.textContent = uid;
+    userSelect.appendChild(opt);
+  });
+}
+loadUsers();
+
+// --- Format time helper ---
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+// --- Add message to chat box ---
 function addMessage(msg) {
   const div = document.createElement("div");
   div.className = "message " + (msg.sender === "admin" ? "admin" : "user");
-  div.innerHTML = `<div>${msg.text}</div><div class="timestamp">${msg.email} • ${formatTime(msg.created_at)}</div>`;
+  div.innerHTML = `<div>${msg.text}</div><div class="timestamp">${msg.sender} • ${formatTime(msg.created_at)}</div>`;
   chatBox.appendChild(div);
 }
 
-async function loadMessages() {
-  const { data } = await client.from("messages").select("*").order("created_at", { ascending: true });
+// --- Load chat for selected user ---
+async function loadChat(userId) {
+  if (!userId) { chatBox.innerHTML = ""; return; }
+  const { data } = await client.from("messages")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
   chatBox.innerHTML = "";
   data.forEach(addMessage);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-sendBtn.onclick = async () => {
-  const text = msgInput.value.trim();
-  const email = emailInput.value.trim();
-  if (!text || !email) return alert("Please enter user Gmail ID and a message.");
-  await client.from("messages").insert([{ text, sender: "admin", email }]);
-  msgInput.value = "";
-};
+// --- When selecting user ---
+userSelect.addEventListener("change", () => {
+  loadChat(userSelect.value);
+});
 
-client.channel("chat")
-  .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-    addMessage(payload.new);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  })
+// --- Send message ---
+sendBtn.addEventListener("click", async () => {
+  const text = msgInput.value.trim();
+  const userId = userSelect.value;
+  if (!text || !userId) return alert("Please select a user first!");
+  const { error } = await client.from("messages").insert([{ text, sender: "admin", user_id: userId }]);
+  if (error) console.error(error);
+  msgInput.value = "";
+  addMessage({ text, sender: "admin", created_at: new Date() });
+});
+
+// --- Real-time updates ---
+client.channel("admin-updates")
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
+      payload => {
+        if (payload.new.user_id === userSelect.value) {
+          addMessage(payload.new);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        // refresh dropdown if new user sends message
+        loadUsers();
+      })
   .subscribe();
 
-loadMessages();
+// --- Logout ---
+logoutBtn.onclick = () => {
+  localStorage.removeItem("adminAuth");
+  window.location.href = "index.html";
+};
 </script>
 </body>
 </html>
